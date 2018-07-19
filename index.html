@@ -1,0 +1,92 @@
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>Annoying bird</title>
+
+        <style>
+            #app{
+                margin: 50px auto 0 auto;
+                width: 500px;
+            }
+
+            input[type="text"], select, textarea{
+                width: 160px;
+            }
+
+            textarea {
+                height: 60px;
+            }
+
+        </style>
+    </head>
+    <body>
+        <div id="app">
+            <div class="left">
+                <form>
+                    <div>
+                        <label>Nombre</label>
+                        <input type="text" id="Nombre"  />
+                    </div>
+                    <div>
+                        <label>Apellido</label>
+                        <input type="text" id="Apellido"  />
+                    </div>
+                    <div>
+                        <label>Sexo</label>
+                        <select id="sexo">
+                            <option value="M">Masculino</option>
+                            <option value="F">Femenino</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Detalle</label>
+                        <textarea id="detalle"></textarea>
+                    </div>
+                    <div>
+                        <label>Habiiltado</label>
+                        <input type="checkbox" id="enabled" />
+                    </div>
+                    <br>
+                    <button id="save">Guardar</button>
+                </form>
+            </div>
+            <div class="right">
+                <div class="console">
+                    
+                </div>
+            </div>
+
+
+
+        </div>
+
+        <!-- plugin initialization -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function(){
+                AnnoyingBird.annoy('test');
+                // create instance of a plugin
+                // var elem = document.getElementById('app');
+                // var instance = new UserList(elem, [
+                //     {firstname: 'Ross', lastname: 'Geller'},
+                //     {firstname: 'Monica', lastname: 'Geller'},
+                //     {firstname: 'Chandler', lastname: 'Bing'},
+                //     {firstname: 'Joey', lastname: 'Tribbiani'},
+                // ]);
+                //
+                // // initialize
+                // instance.init();
+                //
+                // // add new users
+                // setTimeout(function(){
+                //     instance.addUser({firstname: 'Rachel', lastname: 'Green'});
+                //
+                //     setTimeout(function(){
+                //         instance.addUser({firstname: 'Phoebe', lastname: 'Buffay'});
+                //     }, 2000);
+                // }, 2000);
+            });
+        </script>
+    </body>
+</html>
