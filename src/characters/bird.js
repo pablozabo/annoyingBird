@@ -1,5 +1,7 @@
 import {Sprite, Facing} from '../base/sprite'
 import {dateDiffSeconds} from '../base/utils'
+import eventAggregator from '../base/eventAggregator'
+import events from '../events'
 
 let name = 'bird';
 
@@ -30,6 +32,8 @@ export default  class Bird extends Sprite {
         this.annoying = false;
         this.rand = 0;
         this.hitCount = 0;
+        this.nextState = null;
+        this.originalTargePosition = this.getOriginalTarget().getBoundingClientRect();
 
         this.cursorInfo = {
             clicked: false,
@@ -41,6 +45,12 @@ export default  class Bird extends Sprite {
         this.stateManager.addState({
             name: 'idle',
             enter: () => {
+                let target = this.getOriginalTarget();
+                this.nextState = null
+                target.style.position = 'relative';
+                target.style.top = 0;
+                target.style.left = 0;
+
                 this.currentAnimation = animations['idle'];
                 this.rand = parseInt(Math.random() * 5);
             },
@@ -73,7 +83,6 @@ export default  class Bird extends Sprite {
             name: 'scratching',
             enter: () => {
                 this.currentAnimation = animations['scratch'];
-                this.animationLoopCount = 0;
             },
             update: () => {
                 this.adjustIdlePosition();
@@ -84,7 +93,6 @@ export default  class Bird extends Sprite {
             name: 'hitting',
             enter: () => {
                 this.currentAnimation = animations['hit'];
-                this.animationCount = 0;
                 this.hitCount++;
             },
             update: () => {
@@ -96,7 +104,6 @@ export default  class Bird extends Sprite {
             name: 'walking',
             enter: () => {
                 this.currentAnimation = animations['walk'];
-                this.animationCount = 0;
             },
             update: () => {
                 this.setRelativePosition()
@@ -109,10 +116,12 @@ export default  class Bird extends Sprite {
             name: 'flying_to_target',
             enter: () => {
                 this.currentAnimation = animations['fly'];
-                this.animationCount = 0;
+
                 if(!this.image.flyPosition){
-                    var xRand = Math.random() * window.innerWidth;
-                    this.image.flyPosition = { y: -28, x: xRand, relativeTargetX: Math.random()};
+                    let target = this.getTarget();
+                    let xRand = Math.random() * window.innerWidth;
+                    this.image.flyPosition = { y: -28, x: xRand, relativeTargetX:  0.9 - Math.random()};
+                    this.image.relativePosition.x = target.clientWidth * (0.9 - Math.random());
                 }
             },
             update: () => {
@@ -125,7 +134,6 @@ export default  class Bird extends Sprite {
             name: 'running_away',
             enter: () => {
                 this.currentAnimation = animations['fly'];
-                this.animationCount = 0;
                 this.escapeTarget = {};
                 this.escapeTarget = this.getEscapeTarget();
             },
@@ -140,10 +148,31 @@ export default  class Bird extends Sprite {
         });
 
         this.stateManager.addState({
+            name: 'leaving',
+            enter: () => {
+                this.currentAnimation = animations['fly'];
+                this.escapeTarget = {};
+                this.escapeTarget = this.getEscapeTarget(true);
+            },
+            update: () => {
+                if(this.cursorInfo.birdClicked){
+                    this.escapeTarget = this.getEscapeTarget(true);
+                }
+
+                this.setFlyFacing();
+                this.flyToTarget();
+
+                if(this.isOnTarget()){
+                    this.destroy();
+                    eventAggregator.trigger(events.bird.left, this.targetId);
+                }
+            }
+        });
+
+        this.stateManager.addState({
             name: 'running_away_with_target',
             enter: () => {
                 this.currentAnimation = animations['fly'];
-                this.animationCount = 0;
                 this.escapeTarget = {};
                 this.escapeTarget = this.getEscapeTarget(true);
             },
@@ -262,15 +291,31 @@ export default  class Bird extends Sprite {
             from: 'flying_to_target',
             to: 'idle',
             criteria: () => {
-                return this.isOnTarget();
+                return this.isOnTarget() && (!this.nextState || this.nextState == 'idle');
             }
         });
 
         this.stateManager.addTransition({
-            from: 'hitting',
+            from: 'flying_to_target',
             to: 'running_away_with_target',
             criteria: () => {
-                return  this.hitCount > 5;
+                return this.isOnTarget() && this.nextState == 'running_away_with_target';
+            }
+        });
+
+        // this.stateManager.addTransition({
+        //     from: 'hitting',
+        //     to: 'running_away_with_target',
+        //     criteria: () => {
+        //         return  this.hitCount > 5;
+        //     }
+        // });
+
+        this.stateManager.addTransition({
+            from: 'running_away_with_target',
+            to: 'idle',
+            criteria: () => {
+                return this.isOnTarget() && this.nextState == 'idle';
             }
         });
 
@@ -304,7 +349,8 @@ export default  class Bird extends Sprite {
 
     getTarget() {
         return this.stateManager.getCurrentStateName() == 'running_away' ||
-               this.stateManager.getCurrentStateName() == 'running_away_with_target' ?
+               this.stateManager.getCurrentStateName() == 'running_away_with_target' ||
+        this.stateManager.getCurrentStateName() == 'leaving' ?
                this.escapeTarget : document.getElementById(this.targetId);
     };
 
@@ -312,28 +358,31 @@ export default  class Bird extends Sprite {
         if(!this.cursorInfo.position) return false;
 
         let target = this.getTarget();
+        let rect = target.getBoundingClientRect();
         let distance = Math.abs(this.getDistance());
 
-        return this.cursorInfo.position.x >= target.offsetLeft &&
-            this.cursorInfo.position.x <= (target.offsetLeft + target.clientWidth) &&
-            this.cursorInfo.position.y >= target.offsetTop &&
-            this.cursorInfo.position.y <= (target.offsetTop + target.clientHeight ) &&
+        return this.cursorInfo.position.x >= rect.left &&
+            this.cursorInfo.position.x <= (rect.left + target.clientWidth) &&
+            this.cursorInfo.position.y >= rect.top &&
+            this.cursorInfo.position.y <= (rect.top + target.clientHeight ) &&
             distance > (spritesheet.width * 0.5);
     };
 
     getDistance() {
         let target = this.getTarget();
+        let rect = target.getBoundingClientRect();
         let cursorRelativePosition = {};
-        cursorRelativePosition.x = this.cursorInfo.position.x - target.offsetLeft;
+        cursorRelativePosition.x = this.cursorInfo.position.x - rect.left;
 
         return cursorRelativePosition.x - this.image.relativePosition.x;
     };
 
     getFlyDistance() {
         let target = this.getTarget();
+        let rect = target.getBoundingClientRect();
         let result = {};
-        result.x = this.image.flyPosition.x - (target.offsetLeft + ( target.clientWidth  * this.image.flyPosition.relativeTargetX) - (spritesheet.width * 0.5));
-        result.y = target.offsetTop - (this.image.flyPosition.y) - spritesheet.width;
+        result.x = this.image.flyPosition.x - (rect.left + this.image.relativePosition.x - (spritesheet.width * 0.5));
+        result.y = rect.top - (this.image.flyPosition.y) - spritesheet.width;
 
         return result;
     }
@@ -347,33 +396,39 @@ export default  class Bird extends Sprite {
 
     adjustIdlePosition(){
         let target = this.getTarget();
+        let rect = target.getBoundingClientRect();
 
-        this.image.style.top  = (target.offsetTop - spritesheet.width)  + 'px';
-        this.image.style.left = (target.offsetLeft + this.image.relativePosition.x - (spritesheet.width * 0.5))  + 'px';
+        this.image.style.top  = (rect.top - spritesheet.width)  + 'px';
+        this.image.style.left = (rect.left + this.image.relativePosition.x - (spritesheet.width * 0.5))  + 'px';
     };
 
     setRelativePosition(){
         if(!this.isCursorOnTarget()) return;
 
         let distance = this.getDistance();
+        let target = this.getTarget();
+        let rect = target.getBoundingClientRect();
         this.image.relativePosition.x += distance * this.walkVelocity;
+        this.image.flyPosition.x = (rect.left + this.image.relativePosition.x - (spritesheet.width * 0.5));
     };
 
     flyToTarget(carryTarget){
         let velocity = carryTarget ? this.flyWithTargetVelocity : this.flyVelocity;
         let target = this.getTarget();
+        let rect = target.getBoundingClientRect();
         let distance = this.getFlyDistance();
-        this.image.flyPosition.x += distance.x *  velocity * -1;
+        this.image.flyPosition.x += distance.x * velocity * -1;
         this.image.flyPosition.y += distance.y * velocity ;
-        this.image.relativePosition.x = (this.image.flyPosition.x - target.offsetLeft + (spritesheet.width * 0.5));
+     //   this.image.relativePosition.x = (this.image.flyPosition.x - rect.left + (spritesheet.width * 0.5));
         this.image.style.top  = (this.image.flyPosition.y )  + 'px';
         this.image.style.left = (this.image.flyPosition.x)  + 'px';
 
         if(carryTarget){
             let originalTarget = this.getOriginalTarget();
-            originalTarget.style.position = 'absolute';
-            originalTarget.style.top  = (this.image.flyPosition.y + spritesheet.width)  + 'px';
-            originalTarget.style.left = (this.image.flyPosition.x) + 'px';
+            let rect = originalTarget.getBoundingClientRect();
+            originalTarget.style.position = 'fixed';
+            originalTarget.style.top = (this.image.flyPosition.y + (spritesheet.height * 0.99) )  + 'px';
+            originalTarget.style.left = this.image.flyPosition.x - this.image.relativePosition.x + (spritesheet.width * 0.5);
         }
     };
 
@@ -387,7 +442,9 @@ export default  class Bird extends Sprite {
     };
 
     isOnTarget(){
-        let distance =  this.getFlyDistance();
+        if(!this.image.flyPosition) return false;
+
+        let distance = this.getFlyDistance();
         return Math.abs(distance.x) < 10 && Math.abs(distance.y) < 10;
     }
 
@@ -397,16 +454,19 @@ export default  class Bird extends Sprite {
     };
 
     getEscapeTarget(farAway){
-        var xDirection =  Math.random() > 0.5 ? 1 : -1;
-        var yDirection =  Math.random() > 0.5 ? 1 : -1;
-        var currentX = this.escapeTarget.x || this.image.flyPosition.x;
-        var currentY = this.escapeTarget.y || this.image.flyPosition.y;
-        var xRand = Math.random() * window.innerWidth;
+        let target = this.getOriginalTarget();
+        let xDirection =  Math.random() > 0.5 ? 1 : -1;
+        let yDirection =  Math.random() > 0.5 ? 1 : -1;
+        let currentX = this.escapeTarget.x || this.image.flyPosition.x;
+        let currentY = this.escapeTarget.y || this.image.flyPosition.y;
+        let xRand = Math.random() * window.innerWidth;
 
         return {
-            offsetLeft: farAway ? xRand : currentX + (Math.random() * 50 * xDirection),
-            offsetTop: farAway ? -50 : currentY + (Math.random() * -10 * yDirection),
-            clientWidth: 10
+            getBoundingClientRect: () => { return {
+                left: farAway ? xRand : currentX + (Math.random() * 50 * xDirection),
+                top: farAway ? -28 - target.clientHeight  : currentY + (Math.random() * -10 * yDirection),
+            }},
+            clientWidth: target.clientWidth
         };
     };
 
@@ -415,7 +475,9 @@ export default  class Bird extends Sprite {
     //region Public methods
 
     annoy () {
-        this.stateManager.setCurrentState('flying_to_target');
+        if(!this.isOnTarget()){
+            this.stateManager.setCurrentState('flying_to_target');
+        }
     };
 
     sleep () {
@@ -423,15 +485,37 @@ export default  class Bird extends Sprite {
     };
 
     flyAwayWithTarget () {
-        this.stateManager.setCurrentState('running_away_with_target');
+
+        if(this.isOnTarget()){
+            this.stateManager.setCurrentState('running_away_with_target');
+        }else
+        {
+            this.nextState = 'running_away_with_target';
+            this.stateManager.setCurrentState('flying_to_target');
+        }
+
     };
 
     comeback () {
+        if(this.stateManager.getCurrentStateName() == 'running_away_with_target'){
+            let target = this.getOriginalTarget();
 
+            this.escapeTarget = {
+                getBoundingClientRect: () => { return {
+                    left: this.originalTargePosition.left,
+                    top: this.originalTargePosition.top
+                }},
+                clientWidth: target.clientWidth
+            };
+
+            this.nextState = 'idle';
+        }
     };
 
     leave () {
-
+        if(this.stateManager.getCurrentStateName() != 'leaving'){
+            this.stateManager.setCurrentState('leaving');
+        }
     };
 
     //endregion

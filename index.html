@@ -6,9 +6,16 @@
         <title>Annoying bird</title>
 
         <style>
-            #app{
-                margin: 50px auto 0 auto;
-                width: 500px;
+            body, input, select, textarea, button, option{
+                font-size: 11px;
+            }
+
+            ul{
+                padding: 0;
+            }
+
+            label{
+                font-weight: bold;
             }
 
             input[type="text"], select, textarea{
@@ -19,73 +26,137 @@
                 height: 60px;
             }
 
+            #app{
+                margin: 40px;
+                min: 600px;
+            }
+
+            .left{
+                float: left;
+            }
+
+            .right{
+                float: right;
+            }
+
+            .field {
+                margin-bottom: 10px;
+            }
+
+            .field label{
+                width: 100px;
+                display: inline-block;
+            }
+
+            .console li {
+                list-style: none;
+            }
+
+            .console .field label {
+                width: 40px;
+            }
         </style>
     </head>
     <body>
         <div id="app">
             <div class="left">
                 <form>
-                    <div>
-                        <label>Nombre</label>
-                        <input type="text" id="Nombre"  />
+                    <div class="field">
+                        <label>First name</label>
+                        <input type="text" id="firstName"  />
                     </div>
-                    <div>
-                        <label>Apellido</label>
-                        <input type="text" id="Apellido"  />
+                    <div class="field">
+                        <label>Last name</label>
+                        <input type="text" id="lastName"  />
                     </div>
-                    <div>
-                        <label>Sexo</label>
-                        <select id="sexo">
-                            <option value="M">Masculino</option>
-                            <option value="F">Femenino</option>
+                    <div class="field">
+                        <label>Gender</label>
+                        <select id="gender">
+                            <option value="M">Male</option>
+                            <option value="F">Female</option>
                         </select>
                     </div>
-                    <div>
-                        <label>Detalle</label>
-                        <textarea id="detalle"></textarea>
+                    <div class="field">
+                        <label>Detail</label>
+                        <textarea id="detail"></textarea>
                     </div>
-                    <div>
-                        <label>Habiiltado</label>
-                        <input type="checkbox" id="enabled" />
+                    <div class="field">
+                        <label>enabled</label>
+                        <div style="width: 160px; display: inline-block; text-align: left; position: relative; top: 4px; left: -5px;">
+                            <div>
+                                <input type="checkbox" id="enabled" />
+                            </div>
+                        </div>
                     </div>
-                    <br>
-                    <button id="save">Guardar</button>
+                    <div class="field">
+                        <label></label>
+                        <button id="save">Save</button>
+                    </div>
                 </form>
             </div>
             <div class="right">
                 <div class="console">
-                    
+                    <div>
+                        <label>Fields</label>
+                        <ul>
+                            <li>
+                                <input type="checkbox" value="firstName" onchange="setField(this.value, this.checked)"> First name
+                            </li>
+                            <li>
+                                <input type="checkbox" value="lastName" onchange="setField(this.value, this.checked)"> Last name
+                            </li>
+                            <li>
+                                <input type="checkbox" value="gender" onchange="setField(this.value, this.checked)"> Gender
+                            </li>
+                            <li>
+                                <input type="checkbox" value="detail" onchange="setField(this.value, this.checked)"> Detail
+                            </li>
+                            <li>
+                                <input type="checkbox" value="enabled" onchange="setField(this.value, this.checked)"> Enabled
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="field">
+                        <label>Action</label>
+                        <select id="action">
+                            <option value="annoy">Annoy</option>
+                            <option value="sleep">Sleep</option>
+                            <option value="flyAwayWith">fly Away With</option>
+                            <option value="comeback">Comeback</option>
+                            <option value="leave">Leave</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                      <button onclick="applyAction()">Apply</button>
+                    <div>
                 </div>
             </div>
-
-
-
         </div>
 
         <!-- plugin initialization -->
         <script>
+            var annoyingBird;
+            var fields = [];
+            var actionSelect = document.getElementById('action');
+
+            function setField (field, checked) {
+               let index =  fields.indexOf(field);
+
+               if(checked && index == -1){
+                   fields.push(field);
+               }else if(!checked && index >= 0){
+                   fields.splice(index, 1);
+               }
+            }
+
+            function applyAction () {
+                var action = actionSelect.value;
+
+                fields.forEach(f => annoyingBird[action](f) )
+            }
+
             document.addEventListener('DOMContentLoaded', function(){
-                AnnoyingBird.annoy('test');
-                // create instance of a plugin
-                // var elem = document.getElementById('app');
-                // var instance = new UserList(elem, [
-                //     {firstname: 'Ross', lastname: 'Geller'},
-                //     {firstname: 'Monica', lastname: 'Geller'},
-                //     {firstname: 'Chandler', lastname: 'Bing'},
-                //     {firstname: 'Joey', lastname: 'Tribbiani'},
-                // ]);
-                //
-                // // initialize
-                // instance.init();
-                //
-                // // add new users
-                // setTimeout(function(){
-                //     instance.addUser({firstname: 'Rachel', lastname: 'Green'});
-                //
-                //     setTimeout(function(){
-                //         instance.addUser({firstname: 'Phoebe', lastname: 'Buffay'});
-                //     }, 2000);
-                // }, 2000);
+                annoyingBird = AnnoyingBird;
             });
         </script>
     </body>

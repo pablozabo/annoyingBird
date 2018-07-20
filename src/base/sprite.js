@@ -35,10 +35,13 @@ class Sprite  {
     }
 
     update (delta) {
+        if(!this.image) return;
+
         var stateChanged = this.stateManager.update(delta);
         this.setAnimationIndex(delta);
 
         if(stateChanged){
+            this.animationCount = 0;
             this.currentAnimationIndex = 0;
             this.animationLoopCount = 0;
             this.animationCount++;
@@ -48,12 +51,15 @@ class Sprite  {
 
     draw () {
         if(!this.currentAnimation) return;
+
         let framePercent = 4.346;
         this.image.style['background-position-x'] = (this.currentAnimation.frames[this.currentAnimationIndex] * framePercent) + '%'
         this.image.style['transform'] = this.facing == Facing.Right ? 'scaleX(1)' : 'scaleX(-1)';
     }
 
     setAnimationIndex (delta) {
+        if(!this.currentAnimation) return;
+
         this.spriteElapsedTime += delta;
 
         if(this.spriteElapsedTime < this.currentAnimation.frequency) return;
@@ -68,6 +74,12 @@ class Sprite  {
             this.currentAnimationIndex++;
         }
     };
+
+    destroy () {
+        this.currentAnimation = null;
+        this.image.parentNode.removeChild(this.image);
+        this.image = null;
+    }
 }
 
 export {

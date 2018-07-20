@@ -25,6 +25,7 @@ window.onbeforeunload = () => {
 
 eventAggregator.on(Events.bird.left, (targetId) => {
     entities[targetId] && remove(targetId);
+    console.log(targetId + ' deleted');
 });
 
 var add = (targetId) => {
