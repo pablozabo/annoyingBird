@@ -4,6 +4,7 @@ import eventAggregator from './base/eventAggregator';
 import Events from './events';
 
 var entities = {};
+var isPatrolling = false;
 
 var update = (delta) => {
     for(const targetId in entities){
@@ -56,6 +57,11 @@ var manager = {
     },
     leave: (targetId) => {
         entities[targetId] && entities[targetId].leave();
+    },
+    patrol: (enabled) => {
+        if(isPatrolling == enabled) return;
+
+
     }
 };
 

@@ -129,6 +129,9 @@
                     <div class="field">
                       <button onclick="applyAction()">Apply</button>
                     <div>
+                    <div class="field">
+                      <button onclick="patrol()">Patrol</button>
+                     <div>
                 </div>
             </div>
         </div>
@@ -138,6 +141,7 @@
             var annoyingBird;
             var fields = [];
             var actionSelect = document.getElementById('action');
+            var isPatrolling = false;
 
             function setField (field, checked) {
                let index =  fields.indexOf(field);
@@ -153,6 +157,12 @@
                 var action = actionSelect.value;
 
                 fields.forEach(f => annoyingBird[action](f) )
+            }
+
+            function patrol () {
+                isPatrolling = !isPatrolling;
+
+                annoyingBird.patrol(isPatrolling);
             }
 
             document.addEventListener('DOMContentLoaded', function(){
