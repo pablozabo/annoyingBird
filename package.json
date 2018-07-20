@@ -5,7 +5,7 @@
   "description": "Annoying html blocker",
   "main": "dist/index.js",
   "scripts": {
-    "build": "NODE_ENV=production webpack",
+    "build": "set NODE_ENV=production&webpack --progress --colors -p",
     "dev": "webpack-dev-server"
   },
   "repository": {
@@ -15,6 +15,8 @@
   "keywords": [
     "node",
     "animation",
+    "annoying",
+    "bird",
     "javascript",
     "plugin",
     "block",
@@ -43,6 +45,5 @@
     "webpack-dev-server": "^2.11.2"
   },
   "dependencies": {
-    "node-gameloop": "^0.1.4"
   }
 }
