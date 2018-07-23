@@ -319,6 +319,14 @@ export default  class Bird extends Sprite {
             }
         });
 
+        this.stateManager.addTransition({
+            from: 'running_away_with_target',
+            to: 'leaving',
+            criteria: () => {
+                return this.isOnTarget() && this.nextState == 'leaving';
+            }
+        });
+
         //endregion
 
         //region Event handlers
@@ -496,7 +504,7 @@ export default  class Bird extends Sprite {
 
     };
 
-    comeback () {
+    comeback (nextState) {
         if(this.stateManager.getCurrentStateName() == 'running_away_with_target'){
             let target = this.getOriginalTarget();
 
@@ -508,12 +516,15 @@ export default  class Bird extends Sprite {
                 clientWidth: target.clientWidth
             };
 
-            this.nextState = 'idle';
+            this.nextState = nextState || 'idle';
         }
     };
 
     leave () {
-        if(this.stateManager.getCurrentStateName() != 'leaving'){
+        if(this.stateManager.getCurrentStateName() == 'running_away_with_target'){
+            this.comeback('leaving');
+        }
+        else if(this.stateManager.getCurrentStateName() != 'running_away_with_target'){
             this.stateManager.setCurrentState('leaving');
         }
     };
